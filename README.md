@@ -28,4 +28,4 @@ This script will:
 - Xlib development headers
 - Sudo access for installation
 
-I stole a lot of stuff from other people, creadit to the original authors
+I stole a lot of stuff from other people, credit to the original authors
