@@ -1652,11 +1652,10 @@ void movemouse(const Arg *arg) {
         ny = selmon->wy;
       else if (abs((selmon->wy + selmon->wh) - (ny + HEIGHT(c))) < snap)
         ny = selmon->wy + selmon->wh - HEIGHT(c);
-      if (!c->isfloating && selmon->lt[selmon->sellt]->arrange &&
-          (abs(nx - c->x) > snap || abs(ny - c->y) > snap))
+      if (!c->isfloating && selmon->lt[selmon->sellt]->arrange) {
         togglefloating(NULL);
-      if (!selmon->lt[selmon->sellt]->arrange || c->isfloating)
-        resize(c, nx, ny, c->w, c->h, 1);
+      }
+      resize(c, nx, ny, c->w, c->h, 1);
       break;
     }
   } while (ev.type != ButtonRelease);
@@ -1807,6 +1806,8 @@ void resizemouse(const Arg *arg) {
   Monitor *m;
   XEvent ev;
   Time lasttime = 0;
+  float mfact_start;
+  int initial_mouse_x, initial_mouse_y;
 
   if (!(c = selmon->sel))
     return;
@@ -1815,11 +1816,15 @@ void resizemouse(const Arg *arg) {
   restack(selmon);
   ocx = c->x;
   ocy = c->y;
+  
+  /* Store initial mfact and mouse position for tiled window resizing */
+  mfact_start = selmon->mfact;
+  initial_mouse_x = -1;  /* Will be set on first motion */
+  initial_mouse_y = -1;  /* Will be set on first motion */
+  
   if (XGrabPointer(dpy, root, False, MOUSEMASK, GrabModeAsync, GrabModeAsync,
                    None, cursor[CurResize]->cursor, CurrentTime) != GrabSuccess)
     return;
-  XWarpPointer(dpy, None, c->win, 0, 0, 0, 0, c->w + c->bw - 1,
-               c->h + c->bw - 1);
   do {
     XMaskEvent(dpy, MOUSEMASK | ExposureMask | SubstructureRedirectMask, &ev);
     switch (ev.type) {
@@ -1833,23 +1838,38 @@ void resizemouse(const Arg *arg) {
         continue;
       lasttime = ev.xmotion.time;
 
-      nw = MAX(ev.xmotion.x - ocx - 2 * c->bw + 1, 1);
-      nh = MAX(ev.xmotion.y - ocy - 2 * c->bw + 1, 1);
-      if (c->mon->wx + nw >= selmon->wx &&
-          c->mon->wx + nw <= selmon->wx + selmon->ww &&
-          c->mon->wy + nh >= selmon->wy &&
-          c->mon->wy + nh <= selmon->wy + selmon->wh) {
-        if (!c->isfloating && selmon->lt[selmon->sellt]->arrange &&
-            (abs(nw - c->w) > snap || abs(nh - c->h) > snap))
-          togglefloating(NULL);
-      }
-      if (!selmon->lt[selmon->sellt]->arrange || c->isfloating)
+      /* For tiled windows in an active layout, adjust mfact instead of direct resize */
+      if (selmon->lt[selmon->sellt]->arrange && !c->isfloating) {
+        /* Initialize mouse position on first motion */
+        if (initial_mouse_x == -1) {
+          initial_mouse_x = ev.xmotion.x_root;
+        } else {
+          /* Calculate mfact adjustment based on horizontal mouse movement */
+          int dx = ev.xmotion.x_root - initial_mouse_x;
+          float delta = (float)dx / selmon->ww * 1.0;  /* High scale factor for responsive sensitivity */
+          float new_mfact = mfact_start + delta;
+          
+          /* Constrain mfact to valid range */
+          if (new_mfact >= 0.05 && new_mfact <= 0.95) {
+            selmon->mfact = selmon->pertag->mfacts[selmon->pertag->curtag] = new_mfact;
+            arrange(selmon);
+          }
+        }
+      } else {
+        /* For floating windows or no layout, use original resize behavior */
+        nw = MAX(ev.xmotion.x - ocx - 2 * c->bw + 1, 1);
+        nh = MAX(ev.xmotion.y - ocy - 2 * c->bw + 1, 1);
+        if (c->mon->wx + nw >= selmon->wx &&
+            c->mon->wx + nw <= selmon->wx + selmon->ww &&
+            c->mon->wy + nh >= selmon->wy &&
+            c->mon->wy + nh <= selmon->wy + selmon->wh) {
+          /* Removed togglefloating call - resize without making floating */
+        }
         resize(c, c->x, c->y, nw, nh, 1);
+      }
       break;
     }
   } while (ev.type != ButtonRelease);
-  XWarpPointer(dpy, None, c->win, 0, 0, 0, 0, c->w + c->bw - 1,
-               c->h + c->bw - 1);
   XUngrabPointer(dpy, CurrentTime);
   while (XCheckMaskEvent(dpy, EnterWindowMask, &ev))
     ;
