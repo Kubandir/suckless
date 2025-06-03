@@ -5,7 +5,8 @@
 */slock
 */slstatus
 */st
-
+.backup
+.vscode
 # Build artifacts
 */build/
 */dist/
