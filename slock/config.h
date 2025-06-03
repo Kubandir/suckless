@@ -13,7 +13,7 @@ static const char *colorname[NUMCOLS] = {
 static const int failonclear = 1;
 
 /* default message */
-static const char * message = "What do you want?";
+static const char * message = "";
 
 /* text color */
 static const char * text_color = "#ffffff";

@@ -11,7 +11,7 @@ static int min_width = 500;                /* minimum width when centered */
 static const char *fonts[] = {
 	"JetBrainsMonoNL:size=14:antialias=true:hinting=true"
 };
-static const char *prompt      = "You again?";      /* -p  option; prompt to the left of input field */
+static const char *prompt      = "dmenu:";      /* -p  option; prompt to the left of input field */
 static unsigned int lines      = 0;
 static unsigned int columns    = 0;
 /* -h option; minimum height of a menu line */

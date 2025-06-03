@@ -27,3 +27,5 @@ This script will:
 - Make
 - Xlib development headers
 - Sudo access for installation
+
+I stole a lot of stuff from other people, creadit to the original authors
