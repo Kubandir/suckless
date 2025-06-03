@@ -1,0 +1,20 @@
+# Compiled binaries
+*/*.o
+*/dmenu
+*/dwm
+*/slock
+*/slstatus
+*/st
+
+# Build artifacts
+*/build/
+*/dist/
+
+# Backup files
+*~
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+Thumbs.db
